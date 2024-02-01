@@ -110,6 +110,12 @@ public class Settings extends YamlConfig {
     @Comment("How many chunks we should send per tick")
     public int CHUNKS_PER_TICK = 16;
 
+    @Comment({
+        "Change server brand in limbo.",
+        "Available placeholders: {default}, {version} and {limbo_name}"
+    })
+    public String LIMBO_SERVER_BRAND = "{default}";
+
     @Comment("Maximum delay for receiving ChatSession packet (for online-mode client-side race condition mitigation)")
     public int CHAT_SESSION_PACKET_TIMEOUT = 5000;
 
