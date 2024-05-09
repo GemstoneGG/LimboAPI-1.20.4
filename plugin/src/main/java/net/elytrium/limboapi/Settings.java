@@ -107,6 +107,12 @@ public class Settings extends YamlConfig {
     })
     public int CHUNK_RADIUS_SEND_ON_SPAWN = 2;
 
+    @Comment({
+        "Change server brand in limbo.",
+        "Available placeholders: {default}, {version} and {limbo_name}"
+    })
+    public String LIMBO_SERVER_BRAND = "{default}";
+
     @Comment("How many chunks we should send per tick")
     public int CHUNKS_PER_TICK = 16;
 
