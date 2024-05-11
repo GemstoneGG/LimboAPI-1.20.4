@@ -18,14 +18,13 @@
 package net.elytrium.limboapi.injection.packet;
 
 import com.velocitypowered.api.network.ProtocolVersion;
-import com.velocitypowered.api.util.GameProfile;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
 import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.StateRegistry;
-import com.velocitypowered.proxy.protocol.packet.UpsertPlayerInfoPacket;
+import com.velocitypowered.proxy.protocol.packet.RemovePlayerInfoPacket;
 import io.netty.util.collection.IntObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.lang.invoke.MethodHandle;
@@ -39,13 +38,13 @@ import net.elytrium.limboapi.LimboAPI;
 import net.elytrium.limboapi.protocol.LimboProtocol;
 
 @SuppressWarnings("unchecked")
-public class UpsertPlayerInfoHook extends UpsertPlayerInfoPacket {
+public class RemovePlayerInfoHook extends RemovePlayerInfoPacket {
 
   private static final MethodHandle SERVER_CONN_FIELD;
 
   private final LimboAPI plugin;
 
-  private UpsertPlayerInfoHook(LimboAPI plugin) {
+  private RemovePlayerInfoHook(LimboAPI plugin) {
     this.plugin = plugin;
   }
 
@@ -55,26 +54,11 @@ public class UpsertPlayerInfoHook extends UpsertPlayerInfoPacket {
       try {
         ConnectedPlayer player = ((VelocityServerConnection) SERVER_CONN_FIELD.invokeExact((BackendPlaySessionHandler) handler)).getPlayer();
         UUID initialID = this.plugin.getInitialID(player);
-        List<Entry> items = this.getEntries();
-
-        for (int i = 0; i < items.size(); ++i) {
-          Entry item = items.get(i);
-
-          if (player.getUniqueId().equals(item.getProfileId())) {
-            Entry fixedEntry = new Entry(initialID);
-            fixedEntry.setDisplayName(item.getDisplayName());
-            fixedEntry.setGameMode(item.getGameMode());
-            fixedEntry.setLatency(item.getLatency());
-            fixedEntry.setDisplayName(item.getDisplayName());
-            if (item.getProfile() != null && item.getProfile().getId().equals(player.getUniqueId())) {
-              fixedEntry.setProfile(new GameProfile(initialID, item.getProfile().getName(), item.getProfile().getProperties()));
-            } else {
-              fixedEntry.setProfile(item.getProfile());
+        if (this.getProfilesToRemove() instanceof List<UUID> uuids) {
+          for (int i = 0; i < uuids.size(); i++) {
+            if (player.getUniqueId().equals(uuids.get(i))) {
+              uuids.set(i, initialID);
             }
-            fixedEntry.setListed(item.isListed());
-            fixedEntry.setChatSession(item.getChatSession());
-
-            items.set(i, fixedEntry);
           }
         }
       } catch (Throwable e) {
@@ -102,9 +86,9 @@ public class UpsertPlayerInfoHook extends UpsertPlayerInfoPacket {
         var packetIDToSupplier = (IntObjectMap<Supplier<? extends MinecraftPacket>>) LimboProtocol.PACKET_ID_TO_SUPPLIER_FIELD.get(protocolRegistry);
         var packetClassToID = (Object2IntMap<Class<? extends MinecraftPacket>>) LimboProtocol.PACKET_CLASS_TO_ID_FIELD.get(protocolRegistry);
 
-        int id = packetClassToID.getInt(UpsertPlayerInfoPacket.class);
-        packetClassToID.put(UpsertPlayerInfoHook.class, id);
-        packetIDToSupplier.put(id, () -> new UpsertPlayerInfoHook(plugin));
+        int id = packetClassToID.getInt(RemovePlayerInfoPacket.class);
+        packetClassToID.put(RemovePlayerInfoHook.class, id);
+        packetIDToSupplier.put(id, () -> new RemovePlayerInfoHook(plugin));
       } catch (ReflectiveOperationException e) {
         throw new ReflectionException(e);
       }
